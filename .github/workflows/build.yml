@@ -29,8 +29,7 @@ jobs:
         buildozer -v android debug
 
     - name: Upload APK
-      uses: actions/upload-artifact@v3
-      with:
-        name: RideuxCalculatorApp-APK
-        path: bin/*.apk
-
+  uses: actions/upload-artifact@v4
+  with:
+    name: RideuxCalculatorApp-APK32
+    path: bin/*.apk
