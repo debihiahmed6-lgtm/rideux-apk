@@ -1,35 +1,38 @@
 name: Build APK
 
 on:
-  workflow_dispatch: # يسمح لك بتشغيل البناء يدويًا من زر Run workflow
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Install dependencies
-      run: |
-        sudo apt update
-        sudo apt install -y python3 python3-pip openjdk-17-jdk unzip git
-        pip install --upgrade pip
-        pip install buildozer cython virtualenv
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
 
-    - name: Build with Buildozer
-      run: |
-        # إنشاء بيئة افتراضية
-        python3 -m venv venv
-        source venv/bin/activate
-        pip install buildozer cython
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install buildozer cython
 
-        # بدء البناء
-        buildozer -v android debug
+      - name: Install Android SDK/NDK
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y openjdk-17-jdk unzip git
+          pip install python-for-android
 
-    - name: Upload APK
-  uses: actions/upload-artifact@v4
-  with:
-    name: RideuxCalculatorApp-APK32
-    path: bin/*.apk
+      - name: Build APK (32-bit)
+        run: |
+          buildozer -v android debug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: RideuxCalculatorApp-APK32
+          path: bin/*.apk
