@@ -1,0 +1,52 @@
+name: Build APK
+
+on:
+  workflow_dispatch:  # تشغيل يدوي
+  push:
+    branches: [ main ]  # أو غيّرها حسب فرعك
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.10"
+
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y zip unzip openjdk-17-jdk python3-pip git
+        pip install --upgrade pip
+        pip install buildozer cython
+
+    - name: Prepare Android SDK
+      run: |
+        mkdir -p $HOME/android-sdk/build-tools/36.0.1/
+        unzip -q tools/aidl.zip -d $HOME/android-sdk/build-tools/36.0.1/
+        chmod +x $HOME/android-sdk/build-tools/36.0.1/aidl
+        echo "✅ AIDL ready"
+
+        mkdir -p $HOME/.buildozer/android/platform/android-sdk/build-tools
+        ln -sfn $HOME/android-sdk/build-tools/36.0.1 $HOME/.buildozer/android/platform/android-sdk/build-tools/36.0.1
+
+    - name: Initialize Buildozer
+      run: |
+        if [ ! -f buildozer.spec ]; then
+          buildozer init
+        fi
+
+    - name: Build APK
+      run: |
+        buildozer -v android debug
+
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: RideuxCalculatorKivy-APK
+        path: bin/*.apk
