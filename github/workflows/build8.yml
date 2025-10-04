@@ -1,48 +1,41 @@
-name: Build APK with Buildozer
+name: Build APK
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    - name: Checkout
+      uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          with:
-            python-version: '3.11'
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
 
-      - name: Install dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y git zip unzip openjdk-17-jdk wget
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y python3-pip python3-setuptools python3-wheel git zip openjdk-17-jdk
+        pip install --upgrade pip
+        pip install cython buildozer
 
-          pip install --upgrade pip
-          pip install buildozer cython
+    - name: Prepare Android SDK & NDK
+      run: |
+        buildozer android clean || true
+        buildozer android debug || true
+        # نقبل التراخيص ونثبت build-tools 36.1
+        yes | $HOME/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
+        yes | $HOME/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager "build-tools;36.1.0"
 
-      - name: Install Android SDK build-tools
-        run: |
-          export ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
-          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
+    - name: Build APK
+      run: buildozer -v android debug
 
-          mkdir -p $ANDROID_HOME
-          yes | sdkmanager --licenses || true
-          yes | sdkmanager --install "build-tools;36.0.1" "platform-tools" "platforms;android-34"
-
-      - name: Build APK
-        run: |
-          buildozer -v android debug
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v3
-        with:
-          name: RideuxCalculatorKivy
-          path: bin/*.apk
+    - name: Upload APK
+      uses: actions/upload-artifact@v3
+      with:
+        name: RideuxCalculatorKivy
+        path: bin/*.apk
